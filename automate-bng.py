@@ -36,7 +36,7 @@ def ping_router_from_active():
         return True, output  # Indicates that the ping was successful
 
     except Exception as e:
-        print(f"An error occurred while connecting to the active router: {e}")
+        print("An error occurred while connecting to the active router: {}".format(e))
         return False, ""
 
     finally:
@@ -59,7 +59,7 @@ def activate_port_on_backup():
         print(stderr.read().decode())
 
     except Exception as e:
-        print(f"An error occurred while connecting to the backup router: {e}")
+        print("An error occurred while connecting to the backup router: {}".format(e))
 
     finally:
         ssh.close()
@@ -81,8 +81,8 @@ def disable_port_on_backup():
         print(stderr.read().decode())
 
     except Exception as e:
-        print(f"An error occurred while connecting to the backup router: {e}")
-
+        print("An error occurred while connecting to the backup router: {}".format(e))
+        
     finally:
         ssh.close()
 
