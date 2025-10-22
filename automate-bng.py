@@ -3,15 +3,15 @@ import time
 
 # Configuration for the routers
 active_router = {
-    'host': '192.168.1.1',  # Replace with your active router's IP
-    'username': 'your_username',  # Replace with your username
-    'password': 'your_password'     # Replace with your password
+    'host': '10.10.20.2',  # Replace with your active router's IP
+    'username': 'admin',  # Replace with your username
+    'password': 'admin'     # Replace with your password
 }
 
 backup_router = {
-    'host': '192.168.1.2',  # Replace with your backup router's IP
-    'username': 'your_username',  # Replace with your username
-    'password': 'your_password'     # Replace with your password
+    'host': '10.10.30.2',  # Replace with your backup router's IP
+    'username': 'admin',  # Replace with your username
+    'password': 'admin'     # Replace with your password
 }
 
 # Function to ping from the active router
@@ -23,7 +23,7 @@ def ping_router_from_active():
         ssh.connect(active_router['host'], username=active_router['username'], password=active_router['password'])
 
         # Execute the ping command (adjust the command as needed)
-        command = 'ping 8.8.8.8 count=10'  # Replace with the target IP you want to ping
+        command = 'ping 192.168.1.2 count=10 interval=0.5'  # Replace with the target IP you want to ping
         stdin, stdout, stderr = ssh.exec_command(command)
 
         # Read the output
