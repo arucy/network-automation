@@ -51,7 +51,7 @@ def activate_port_on_backup():
         ssh.connect(backup_router['host'], username=backup_router['username'], password=backup_router['password'])
 
         # Command to activate the port (replace 'ether2' with your actual port)
-        command = 'interface enable ether2'  # Adjust the command as needed
+        command = 'interface set numbers=0 disabled=no'  # Adjust the command as needed
         stdin, stdout, stderr = ssh.exec_command(command)
 
         # Print output and errors
@@ -73,7 +73,7 @@ def disable_port_on_backup():
         ssh.connect(backup_router['host'], username=backup_router['username'], password=backup_router['password'])
 
         # Command to disable the port (replace 'ether2' with your actual port)
-        command = 'interface disable ether2'  # Adjust the command as needed
+        command = 'interface set numbers=0 disabled=yes'  # Adjust the command as needed
         stdin, stdout, stderr = ssh.exec_command(command)
 
         # Print output and errors
@@ -82,7 +82,7 @@ def disable_port_on_backup():
 
     except Exception as e:
         print("An error occurred while connecting to the backup router: {}".format(e))
-        
+
     finally:
         ssh.close()
 
@@ -107,4 +107,4 @@ if __name__ == "__main__":
                     backup_active = False
             print("Active router is up.")
 
-        time.sleep(10)  # Wait before the next ping attempt
+        time.sleep(5)  # Wait before the next ping attempt
