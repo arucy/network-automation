@@ -38,7 +38,9 @@ ROUTER_CONFIG = {
         'enable_backup': 'interface set numbers=0 disabled=no',
         'disable_backup': 'interface set numbers=0 disabled=yes'
     },
-    'check_interval': 1
+    'check_interval': 0.5,  # Reduced from 1 to 0.5 seconds
+    'failure_threshold': 2,  # Reduced from 3 to 2 consecutive failures
+    'recovery_threshold': 2  # Reduced from 3 to 2 consecutive successes
 }
 
 class RouterManager:
@@ -135,8 +137,8 @@ class BNGFailover:
         """Continuous loopback monitoring thread"""
         consecutive_failures = 0
         consecutive_successes = 0
-        failure_threshold = 3
-        recovery_threshold = 3
+        failure_threshold = self.config.get('failure_threshold', 2)
+        recovery_threshold = self.config.get('recovery_threshold', 2)
         was_down = False
         
         while not self.stop_monitoring:
@@ -149,7 +151,6 @@ class BNGFailover:
                     logging.info(f"Loopback {self.active_router.loopback} recovered")
                     was_down = False
                     consecutive_successes = 0
-                    # Let main loop handle backup deactivation
                     continue
             else:
                 consecutive_failures += 1
@@ -160,7 +161,7 @@ class BNGFailover:
                     was_down = True
                     consecutive_failures = 0
             
-            time.sleep(1)
+            time.sleep(0.5)  # Reduced sleep time
 
     def handle_failover(self, loopback_failure=False):
         """Handle failover based on failure type"""
@@ -216,7 +217,7 @@ class BNGFailover:
         self.loopback_monitor_thread.start()
         
         recovery_count = 0
-        recovery_threshold = 3
+        recovery_threshold = self.config.get('recovery_threshold', 2)
         
         while True:
             try:
