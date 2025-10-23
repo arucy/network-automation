@@ -24,7 +24,7 @@ ROUTER_CONFIG = {
         'password': 'admin',
         'port': 22,
         'timeout': 30,
-        'loopback': '10.10.20.2'  # Add loopback address
+        'loopback': '10.10.10.10'  # Add loopback address
     },
     'backup_router': {
         'host': '10.10.30.2',
