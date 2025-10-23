@@ -133,11 +133,30 @@ class BNGFailover:
 
     def monitor_loopback(self):
         """Continuous loopback monitoring thread"""
+        consecutive_failures = 0
+        consecutive_successes = 0
+        failure_threshold = 3  # Number of failures before declaring down
+        recovery_threshold = 3  # Number of successes before declaring recovered
+        
         while not self.stop_monitoring:
             is_reachable = self.active_router.check_loopback_connectivity()
-            if not is_reachable:
-                logging.warning(f"Loopback {self.active_router.loopback} unreachable")
-                self.handle_failover(loopback_failure=True)
+            
+            if is_reachable:
+                consecutive_successes += 1
+                consecutive_failures = 0
+                if consecutive_successes >= recovery_threshold and self.backup_active:
+                    logging.info(f"Loopback {self.active_router.loopback} recovered")
+                    if self.deactivate_backup():
+                        self.backup_active = False
+                    consecutive_successes = 0
+            else:
+                consecutive_failures += 1
+                consecutive_successes = 0
+                if consecutive_failures >= failure_threshold and not self.backup_active:
+                    logging.warning(f"Loopback {self.active_router.loopback} unreachable")
+                    self.handle_failover(loopback_failure=True)
+                    consecutive_failures = 0
+                    
             time.sleep(1)
 
     def handle_failover(self, loopback_failure=False):
