@@ -34,13 +34,13 @@ ROUTER_CONFIG = {
         'timeout': 30
     },
     'commands': {
-        'ping_test': 'ping 192.168.1.2 count=10 interval=0.5',
+        'ping_test': 'ping 192.168.1.2 count=5 interval=0.2',  # Faster ping test
         'enable_backup': 'interface set numbers=0 disabled=no',
         'disable_backup': 'interface set numbers=0 disabled=yes'
     },
-    'check_interval': 0.5,  # Reduced from 1 to 0.5 seconds
-    'failure_threshold': 2,  # Reduced from 3 to 2 consecutive failures
-    'recovery_threshold': 2  # Reduced from 3 to 2 consecutive successes
+    'check_interval': 0.2,  # Reduced from 0.5 to 0.2 seconds
+    'failure_threshold': 2,  # Keep at 2 consecutive failures
+    'recovery_threshold': 2  # Keep at 2 consecutive successes
 }
 
 class RouterManager:
@@ -100,19 +100,22 @@ class RouterManager:
             self.ssh_client = None
 
     def check_loopback_connectivity(self) -> bool:
-        """Check if loopback address is reachable using fping"""
+        """Check if loopback address is reachable using optimized fping"""
         try:
+            # -c 2: send 2 pings
+            # -p 20: interval 20ms between pings
+            # -t 100: timeout 100ms
             result = subprocess.run(
-                ['fping', '-r', '3', '-t', '500', self.loopback],
+                ['fping', '-c', '2', '-p', '20', '-t', '100', self.loopback],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True
             )
             return result.returncode == 0
         except FileNotFoundError:
-            logging.warning("fping not found, using standard ping")
+            logging.warning("fping not found, using fast ping")
             response = subprocess.run(
-                ['ping', '-n', '1', '-w', '500', self.loopback],
+                ['ping', '-n', '1', '-w', '100', self.loopback],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
@@ -161,7 +164,7 @@ class BNGFailover:
                     was_down = True
                     consecutive_failures = 0
             
-            time.sleep(0.5)  # Reduced sleep time
+            time.sleep(0.2)  # Reduced sleep time to 200ms
 
     def handle_failover(self, loopback_failure=False):
         """Handle failover based on failure type"""
