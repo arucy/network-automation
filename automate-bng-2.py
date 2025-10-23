@@ -135,8 +135,9 @@ class BNGFailover:
         """Continuous loopback monitoring thread"""
         consecutive_failures = 0
         consecutive_successes = 0
-        failure_threshold = 3  # Number of failures before declaring down
-        recovery_threshold = 3  # Number of successes before declaring recovered
+        failure_threshold = 3
+        recovery_threshold = 3
+        was_down = False
         
         while not self.stop_monitoring:
             is_reachable = self.active_router.check_loopback_connectivity()
@@ -144,19 +145,21 @@ class BNGFailover:
             if is_reachable:
                 consecutive_successes += 1
                 consecutive_failures = 0
-                if consecutive_successes >= recovery_threshold and self.backup_active:
+                if was_down and consecutive_successes >= recovery_threshold:
                     logging.info(f"Loopback {self.active_router.loopback} recovered")
-                    if self.deactivate_backup():
-                        self.backup_active = False
+                    was_down = False
                     consecutive_successes = 0
+                    # Let main loop handle backup deactivation
+                    continue
             else:
                 consecutive_failures += 1
                 consecutive_successes = 0
-                if consecutive_failures >= failure_threshold and not self.backup_active:
+                if consecutive_failures >= failure_threshold and not was_down:
                     logging.warning(f"Loopback {self.active_router.loopback} unreachable")
                     self.handle_failover(loopback_failure=True)
+                    was_down = True
                     consecutive_failures = 0
-                    
+            
             time.sleep(1)
 
     def handle_failover(self, loopback_failure=False):
@@ -208,29 +211,26 @@ class BNGFailover:
         """Main monitoring loop"""
         logging.info("Starting BNG failover monitoring...")
         
-        # Start loopback monitoring thread
         self.loopback_monitor_thread = threading.Thread(target=self.monitor_loopback)
         self.loopback_monitor_thread.daemon = True
         self.loopback_monitor_thread.start()
         
+        recovery_count = 0
+        recovery_threshold = 3
+        
         while True:
             try:
-                # Skip other checks if loopback is unreachable
-                if not self.active_router.check_loopback_connectivity():
-                    time.sleep(self.config['check_interval'])
-                    continue
+                is_reachable = self.active_router.check_loopback_connectivity()
 
-                # Check SSH and ping test status
-                ssh_ok, ping_ok = self.check_active_router()
-
-                if not ssh_ok:
-                    logging.warning("SSH failed but loopback is up - continuing monitoring")
-                elif not ping_ok and not self.backup_active:
-                    self.handle_failover()
-                elif ping_ok and self.backup_active:
-                    logging.info("Active router recovered, deactivating backup")
-                    if self.deactivate_backup():
-                        self.backup_active = False
+                if is_reachable:
+                    recovery_count += 1
+                    if recovery_count >= recovery_threshold and self.backup_active:
+                        logging.info("Active router recovered, deactivating backup")
+                        if self.deactivate_backup():
+                            self.backup_active = False
+                        recovery_count = 0
+                else:
+                    recovery_count = 0
 
                 time.sleep(self.config['check_interval'])
 
