@@ -106,7 +106,7 @@ class RouterManager:
             # -p 20: interval 20ms between pings
             # -t 100: timeout 100ms
             result = subprocess.run(
-                ['fping', '-c', '2', '-p', '20', '-t', '100', self.loopback],
+                ['fping', '-c', '10', '-p', '5', '-t', '100', self.loopback],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True
